@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-// interface IERC20 {
-//     function transfer(address to, uint256 value) external returns (bool);
-//     function transferFrom(address from, address to, uint256 value) external returns (bool);
-//     function balanceOf(address account) external view returns (uint256);
-//     function approve(address spender, uint256 value) external returns (bool);
-// }
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract SimpleSwap {
@@ -35,6 +28,7 @@ contract SimpleSwap {
     function initialize(uint256 tokenAAmount_, uint256 tokenBAmount_) external {
 
         require(msg.sender == owner, "Only owner can initialize");
+        require(tokenAAmount_ == tokenBAmount_, "The balances must be equal");
         require(!isInitialized, "Already initialized");
 
         uint256 tokenABalance = tokenA.balanceOf(msg.sender);
