@@ -25,8 +25,7 @@ contract MonkeyToken is ERC721, ERC721URIStorage, Ownable {
     function safeMint(address to) public onlyOwner {
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
-        string memory uri = '';
-        _setTokenURI(tokenId, uri );
+        _setTokenURI(tokenId, '' );
     }
 
     // The following functions are overrides required by Solidity.
