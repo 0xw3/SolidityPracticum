@@ -12,7 +12,7 @@ interface IERC20Extended is IERC20 {
 contract SimpleSwap {
 
     using SafeERC20 for IERC20;
-
+    
     address public owner;
     
     /**
@@ -33,6 +33,14 @@ contract SimpleSwap {
 
     modifier onlyInitialized() {
         require(isInitialized, "Swap contract has not yet been initialized");
+        _;
+    }
+
+    /**
+    * @dev token is tokenA or tokenB
+    */
+    modifier validToken(IERC20Extended token) {
+        require(token == tokenA || token == tokenB, "Wrong token");
         _;
     }
 
@@ -57,10 +65,8 @@ contract SimpleSwap {
         require(tokenABalance >= tokenAAmount_, "Insufficient balance of Token A");
         require(tokenBBalance >= tokenBAmount_, "Insufficient balance of Token B");
 
-        SafeERC20.safeTransferFrom(IERC20(address(tokenA)), msg.sender, address(this), tokenAAmount_);
-        SafeERC20.safeTransferFrom(IERC20(address(tokenB)), msg.sender, address(this), tokenBAmount_);
-        // tokenA.safeTransferFrom(msg.sender, address(this), tokenAAmount_);
-        // tokenB.safeTransferFrom(msg.sender, address(this), tokenBAmount_);
+        IERC20(tokenA).safeTransferFrom(msg.sender, address(this), tokenAAmount_);
+        IERC20(tokenB).safeTransferFrom(msg.sender, address(this), tokenBAmount_);
 
         isInitialized = true;
 
@@ -73,15 +79,15 @@ contract SimpleSwap {
     * 1. Exchange rate 1 to 1
     * 2. Decimal of both tokens are equal
     */
-    function swap(IERC20 tokenLeft, uint256 amount) public onlyInitialized {
+    function swap(IERC20Extended tokenLeft, uint256 amount) public onlyInitialized validToken(tokenLeft) {
 
         IERC20 tokenRight = tokenLeft == tokenA ? tokenB : tokenA;
         require(isInitialized,"Contract not initialized");
         require(tokenLeft.balanceOf(msg.sender) >= amount,"You don't have enough balance");
         require(tokenRight.balanceOf(address(this)) >= amount,"The swap contract doesn't have enough balance");
 
-        tokenLeft.safeTransferFrom(msg.sender, address(this), amount);
-        tokenRight.safeTransfer(msg.sender, amount);
+        IERC20(tokenLeft).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(tokenRight).safeTransfer(msg.sender, amount);
 
         emit Swap(address(this), msg.sender, address(tokenLeft), amount);
     }
@@ -90,8 +96,7 @@ contract SimpleSwap {
     * @dev 
     * Buy token for Ether
     */
-    function buy(IERC20Extended token) payable public onlyInitialized {
-
+    function buy(IERC20Extended token) payable public onlyInitialized validToken(token) {
         uint256 tokenBalance = token.balanceOf(address(this));
         uint8 tokenDecimals = token.decimals();
         uint256 tokenAmountForTransfer = ( msg.value * ETHRATE * 10**tokenDecimals )/(10**18);
@@ -105,8 +110,7 @@ contract SimpleSwap {
     * @dev 
     * Sell token for Ether
     */
-    function sell(IERC20Extended token, uint256 tokenAmount) payable public onlyInitialized {
-
+    function sell(IERC20Extended token, uint256 tokenAmount) payable public onlyInitialized validToken(token) {
         uint256 tokenBalance = token.balanceOf(msg.sender);
         uint8 tokenDecimals = token.decimals();
         uint256 etherAmount = (tokenAmount * 10**18) / (ETHRATE * 10**tokenDecimals );
